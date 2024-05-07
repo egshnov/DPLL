@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
-#include "CNF.hpp"
+#include "CNF.h"
+#include "DPLL.h"
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -22,7 +23,11 @@ int main(int argc, char *argv[]) {
         std::cerr << "Given file doesn't satisfy DIMACS format" << std::endl;
         return 1;
     }
-
-    std::cout << cnf.CnfToString();
+    bool solve = solver::DPLL(cnf);
+    if (solve) {
+        std::cout << cnf.CnfToString();
+    } else {
+        std::cout << "UNSAT";
+    }
     return 0;
 }

@@ -4,7 +4,9 @@ project(DPLL)
 set(CMAKE_CXX_STANDARD 17)
 
 add_executable(DPLL main.cpp
-        CNF.hpp
+        CNF.h
         CNF.cpp
-        DPLL.hpp
+        DPLL.h
+        DPLL.h
+        DPLL.cpp
 )
