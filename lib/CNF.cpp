@@ -100,7 +100,7 @@ namespace solver {
     }
 
     void CNF::UnitPropagation() { //TODO: split?
-
+        //std::cout << "Propagating" << std::endl;
         auto is_appropriate_unit = [this](const Clause &clause) {
             return clause.size() == 1 && get_usage_count(*clause.begin()) > 1;
             //если unit и есть смысл проверять наличие переменной в других дизъюнктах.
@@ -146,25 +146,31 @@ namespace solver {
 
             unit_clause_iterator = std::find_if(clauses_.begin(), clauses_.end(), is_appropriate_unit);
         }
+
+        //std::cout << "propagation end" << std::endl;
     }
 
     int CNF::find_pure() { //optimize?
         for (int i = 0; i < variables_num_; i++) {
             if (variable_sign_usage_count_[i].plus_ == 0 ||
                 variable_sign_usage_count_[i].minus_ == 0 &&
-                get_usage_count(i) > 1) // //входит во все дизъюнкты с одним знаком (и дизъюнктов больше одного)
+                get_usage_count(i + 1) > 1) // //входит во все дизъюнкты с одним знаком (и дизъюнктов больше одного)
                 return i;
         }
         return -1;
     }
 
     void CNF::PureLiterals() { // TODO: optimize?
+        //std::cout << "Literals" << std::endl;
         int i = find_pure();
         while (i != -1) {
-
             int sign = variable_sign_usage_count_[i].plus_ != 0 ? 1 : -1;
             int p = (i + 1) * sign;
-
+            std::cout << "current pure " << p << std::endl;
+            std::cout << "current cnf" << std::endl << CnfToString() << std::endl;
+            int ct;
+            std::cin
+                    >> ct;
             auto contains_p = [this, p](Clause &clause) {
                 bool contains = clause.find(p) != clause.end();
                 if (contains) {
@@ -175,19 +181,24 @@ namespace solver {
                 }
                 return contains;
             };
-
             std::remove_if(clauses_.begin(), clauses_.end(), contains_p);
+            //std::cout << "after remove" << std::endl << CnfToString() << std::endl;
             clauses_.emplace_front(p);
+            increase_usage_count(p);
+            //std::cout << "emplaced " << std::endl;
             clauses_num_++;
             i = find_pure();
+            //std::cout << "after emplace" << std::endl << CnfToString() << std::endl;
         }
+        //std::cout << "literals end" << std::endl;
     }
 
     void CNF::AddClauseFront(int p) {
-        clauses_.emplace_front(p);
+        std::unordered_set<int> tmp = {p};
+        clauses_.emplace_front(std::move(tmp));
     }
 
-    bool CNF::IsInterpetation() {
+    bool CNF::IsInterpretation() {
 
         if (clauses_num_ != variables_num_) {
             return false;

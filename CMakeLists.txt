@@ -1,12 +1,10 @@
-cmake_minimum_required(VERSION 3.28)
+cmake_minimum_required(VERSION 3.14)
 project(DPLL)
 
 set(CMAKE_CXX_STANDARD 17)
+add_executable(DPLL main.cpp)
 
-add_executable(DPLL main.cpp
-        CNF.h
-        CNF.cpp
-        DPLL.h
-        DPLL.h
-        DPLL.cpp
-)
+enable_testing()
+
+add_subdirectory(lib)
+add_subdirectory(tests)

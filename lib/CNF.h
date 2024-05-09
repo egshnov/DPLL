@@ -82,6 +82,10 @@ namespace solver {
             return contains_empty_;
         }
 
+        [[nodiscard]] int GetVariablesNum() const {
+            return variables_num_;
+        }
+
         void AddClauseFront(int p);
 
         std::string CnfToString();
@@ -90,7 +94,7 @@ namespace solver {
 
         void UnitPropagation();
 
-        bool IsInterpetation();
+        bool IsInterpretation();
 
         void PureLiterals();
     };

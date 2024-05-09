@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fstream>
-#include "CNF.h"
-#include "DPLL.h"
+#include "lib/CNF.h"
+#include "lib/DPLL.h"
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {

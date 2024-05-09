@@ -1,22 +1,27 @@
 #include "DPLL.h"
 #include "CNF.h"
 #include <vector>
+#include <iostream>
 
 namespace solver {
 
     namespace {
-        bool real_solver(CNF &cnf, int branch) { //check branch?
+        bool real_solver(CNF &cnf, int branch) {//check branch?
+            if (branch > cnf.GetVariablesNum()) return false;
+            std::cout << "branch " << branch << std::endl;
             cnf.UnitPropagation();
+
             if (cnf.ContainsEmpty()) {
                 return false;
             }
+            std::cout << "after propagation:\n" << cnf.CnfToString() << std::endl;
             cnf.PureLiterals();
-            if (cnf.IsInterpetation()) return true;
-            cnf.AddClauseFront(branch);
+            std::cout << "after pure literals \n" << cnf.CnfToString() << std::endl;
+            if (cnf.IsInterpretation()) return true;
             CNF tmp = cnf;
             tmp.AddClauseFront(branch);
             bool solved = real_solver(tmp, branch + 1);
-            if (solved) {
+            if (solved) { //FIXME: redundant copy?
                 cnf = tmp;
                 return true;
             }
