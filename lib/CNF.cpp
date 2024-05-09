@@ -114,17 +114,16 @@ namespace solver {
     }
 
     void CNF::UnitPropagation() { //TODO: split?
-        //std::cout << "Propagating" << std::endl;
+        //ищем среди дизъюнктов unit_clause такой что его переменная содержится в других дизъюнктах (иначе нет смысла его рассматривать)
         auto is_appropriate_unit = [this](const Clause &clause) {
             return clause.size() == 1 && get_usage_count(*clause.begin()) > 1;
-            //если unit и есть смысл проверять наличие переменной в других дизъюнктах.
         };
         auto unit_clause_iterator = std::find_if(clauses_.begin(), clauses_.end(), is_appropriate_unit);
 
-        while (unit_clause_iterator != clauses_.end()) { // для всех unit_clause применяем UnitPropagation (пока есть)
+        while (unit_clause_iterator != clauses_.end()) { // для всех подходящих unit_clause применяем UnitResolution
             int p = *(unit_clause_iterator->begin());
             bool is_same_sign; // с каким знаком входит в найденный дизъюнкт
-            decltype(unit_clause_iterator->begin()) literal_iterator;
+            decltype(unit_clause_iterator->begin()) literal_iterator; //итератор из на элемент unordered_set<int>
 
             auto contains_p = [p, &is_same_sign, &literal_iterator](Clause &clause) {
                 literal_iterator = clause.find(p);
@@ -135,18 +134,23 @@ namespace solver {
                 }
                 return literal_iterator != clause.end();
             };
-
+            // итератор на дизъюнкт содержащий переменную из unit clause
             auto target_clause_iterator = std::find_if(clauses_.begin(), clauses_.end(), contains_p);
+
             while (target_clause_iterator != clauses_.end()) {
-                auto next_iterator = std::next(target_clause_iterator);
-                if (target_clause_iterator != unit_clause_iterator) {
+                auto next_iterator = std::next(target_clause_iterator); // итератор на элемент следующий за найденным
+                if (target_clause_iterator != unit_clause_iterator) { // с нашим unit clause ничего делать не надо
 
-                    decrease_usage_count(*literal_iterator);
 
-                    if (is_same_sign) {
+                    if (is_same_sign) { // если наша переменная входит в дизъюнкт с тем же знаком удаляем дизъюнкт
+                        for (auto var: *target_clause_iterator) {
+                            // уменьшаем число использований у всех переменных содержащихся в дизъюнкте
+                            decrease_usage_count(var);
+                        }
                         clauses_.erase(target_clause_iterator);
                         clauses_num_--;
-                    } else {
+                    } else { // если переменная входит с другим знаком удаляем её из дизъюнкта
+                        decrease_usage_count(*literal_iterator);
                         target_clause_iterator->erase(literal_iterator);
                         if (target_clause_iterator->empty()) {
                             contains_empty_ = true;
@@ -158,10 +162,9 @@ namespace solver {
                                                       contains_p);
             }
 
-            unit_clause_iterator = std::find_if(clauses_.begin(), clauses_.end(), is_appropriate_unit);
+            unit_clause_iterator = std::find_if(clauses_.begin(), clauses_.end(),
+                                                is_appropriate_unit); //FIXME: ultra slow
         }
-
-        //std::cout << "propagation end" << std::endl;
     }
 
     int CNF::find_pure() { //optimize?

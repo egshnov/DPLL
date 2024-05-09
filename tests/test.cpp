@@ -37,5 +37,17 @@ TEST(CNFParsingTest, SmallCnf) {
     EXPECT_EQ(cnf.ToString(), expected);
 }
 
-TEST(CNFUnitPropagation, )
+void test_propagation(const std::string &filename, const std::string &expected) {
+    solver::CNF cnf;
+    EXPECT_NO_THROW(cnf.Parse("../../tests/test_input_data/" + filename));
+    cnf.UnitPropagation();
+    EXPECT_EQ(cnf.ToString(), expected);
+}
+
+TEST(CNFEuristics, UnitPropagation) {
+    test_propagation("propagate1.cnf", "-2 -1 0\n3 0\n-2 1 0\n");
+    test_propagation("propagate2.cnf", "1 0\n2 0\n3 0\n4 0\n");
+    test_propagation("propagate3.cnf", "3 0\n4 0\n1 0\n");
+    test_propagation("propagate4.cnf", "1 0\n-3 0\n2 0\n4 0\n0\n");
+}
 
