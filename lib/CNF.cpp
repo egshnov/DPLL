@@ -4,6 +4,8 @@
 #include <string>
 #include <sstream>
 #include <algorithm>
+#include <stdexcept>
+#include "errormsg.h"
 
 namespace solver {
     void CNF::increase_usage_count(int p) {
@@ -43,15 +45,15 @@ namespace solver {
 
             iss >> tmp;
             if (tmp != "p") {
-                throw std::invalid_argument("Given file doesn't satisfy DIMACS format");
+                throw std::invalid_argument(errors::kNotDIMACS);
             }
             iss >> tmp;
             if (tmp != "cnf") {
-                throw std::invalid_argument("Given file doesn't satisfy DIMACS format");
+                throw std::invalid_argument(errors::kNotDIMACS);
             }
             iss >> variables_num_ >> clauses_num_;
             if (variables_num_ <= 0 || clauses_num_ <= 0) {
-                throw std::invalid_argument("Given file doesn't satisfy DIMACS format");
+                throw std::invalid_argument(errors::kNotDIMACS);
             }
 
         }
@@ -62,7 +64,7 @@ namespace solver {
         while (std::getline(stream, line)) {
 
             if (ind == clauses_num_) {
-                throw std::invalid_argument("Given file doesn't satisfy DIMACS format");
+                throw std::invalid_argument(errors::kNotDIMACS);
             }
 
             std::istringstream iss(line); //FIXME: redundant copy
@@ -70,7 +72,7 @@ namespace solver {
             Clause tmp_clause;
             while (p != 0) {
                 if (std::abs(p) > variables_num_) {
-                    throw std::invalid_argument("Given file doesn't satisfy DIMACS format");
+                    throw std::invalid_argument(errors::kNotDIMACS);
                 }
                 tmp_clause.insert(p);
                 increase_usage_count(p);
@@ -78,17 +80,29 @@ namespace solver {
                 iss >> p;
             }
 
-            if (tmp_clause.empty()) throw std::invalid_argument("Given file doesn't satisfy DIMACS format");
+            if (tmp_clause.empty()) throw std::invalid_argument(errors::kNotDIMACS);
             clauses_.push_back(std::move(tmp_clause));
             ind++;
         }
 
         for (auto used: is_used) {
-            if (!used) throw std::invalid_argument("Given file doesn't satisfy DIMACS format");
+            if (!used) throw std::invalid_argument(errors::kNotDIMACS);
         }
     }
 
-    std::string CNF::CnfToString() {
+    void CNF::Parse(const std::string &filename) {
+        std::ifstream input(filename);
+        if (!input.is_open()) throw std::invalid_argument(errors::kClosed);
+
+        try {
+            Init(input);
+        }
+        catch (const std::string &error_message) {
+            throw std::invalid_argument(error_message);
+        }
+    }
+
+    std::string CNF::ToString() {
         std::string result;
         for (const auto &c: clauses_) {
             for (auto it: c) {
@@ -167,7 +181,7 @@ namespace solver {
             int sign = variable_sign_usage_count_[i].plus_ != 0 ? 1 : -1;
             int p = (i + 1) * sign;
             std::cout << "current pure " << p << std::endl;
-            std::cout << "current cnf" << std::endl << CnfToString() << std::endl;
+            std::cout << "current cnf" << std::endl << ToString() << std::endl;
             int ct;
             std::cin
                     >> ct;

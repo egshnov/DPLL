@@ -8,3 +8,5 @@ enable_testing()
 
 add_subdirectory(lib)
 add_subdirectory(tests)
+
+target_link_libraries(DPLL Solver)

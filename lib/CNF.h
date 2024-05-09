@@ -71,6 +71,8 @@ namespace solver {
 
         int find_pure();
 
+        void Init(std::ifstream &stream);
+
     public:
         CNF() = default;
 
@@ -88,9 +90,9 @@ namespace solver {
 
         void AddClauseFront(int p);
 
-        std::string CnfToString();
+        std::string ToString();
 
-        void Init(std::ifstream &stream);
+        void Parse(const std::string &filename);
 
         void UnitPropagation();
 

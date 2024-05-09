@@ -14,9 +14,9 @@ namespace solver {
             if (cnf.ContainsEmpty()) {
                 return false;
             }
-            std::cout << "after propagation:\n" << cnf.CnfToString() << std::endl;
+            std::cout << "after propagation:\n" << cnf.ToString() << std::endl;
             cnf.PureLiterals();
-            std::cout << "after pure literals \n" << cnf.CnfToString() << std::endl;
+            std::cout << "after pure literals \n" << cnf.ToString() << std::endl;
             if (cnf.IsInterpretation()) return true;
             CNF tmp = cnf;
             tmp.AddClauseFront(branch);
