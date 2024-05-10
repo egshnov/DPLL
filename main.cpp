@@ -19,7 +19,12 @@ int main(int argc, char *argv[]) {
         std::cerr << error_message << std::endl;
         return -1;
     }
-    std::cout << cnf.ToString() << std::endl;
 
+    solver::DPLL(cnf);
+    if (cnf.IsUnsat()) {
+        std::cout << "UNSAT" << std::endl;
+    } else {
+        std::cout << cnf.ToString() << std::endl;
+    }
     return 0;
 }

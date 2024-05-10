@@ -1,37 +1,51 @@
 #include "DPLL.h"
 #include "CNF.h"
-#include <vector>
-#include <iostream>
+#include <iostream> //TODO: rm
 
 namespace solver {
 
     namespace {
-        bool real_solver(CNF &cnf, int branch) {//check branch?
-            if (branch > cnf.GetVariablesNum()) return false;
-            std::cout << "branch " << branch << std::endl;
+        bool real_solver(CNF &cnf, int branch) {
             cnf.UnitPropagation();
 
-            if (cnf.ContainsEmpty()) {
+            if (cnf.IsUnsat()) {
+                std::cout << cnf.ToString() << std::endl;// только UnitPropagation генерирует пустые
                 return false;
             }
-            std::cout << "after propagation:\n" << cnf.ToString() << std::endl;
+
             cnf.PureLiterals();
-            std::cout << "after pure literals \n" << cnf.ToString() << std::endl;
-            if (cnf.IsInterpretation()) return true;
+            if (cnf.IsInterpretation()) return true; //TODO: optimize
+
+            if (std::abs(branch) + 1 > cnf.GetVariablesNum()) {
+                return false;
+            }
+
             CNF tmp = cnf;
-            tmp.AddClauseFront(branch);
-            bool solved = real_solver(tmp, branch + 1);
-            if (solved) { //FIXME: redundant copy?
+            tmp.AddUnitClauseFront(std::abs(branch) + 1);
+            std::cout << "branch " << std::abs(branch) + 1 << std::endl;
+            bool solved = real_solver(tmp, std::abs(branch) + 1);
+
+            if (solved) {
                 cnf = tmp;
+                //std::cout << "SOLVED" << std::endl;
                 return true;
             }
-            cnf.AddClauseFront(-branch);
-            return real_solver(cnf, branch + 1);
+
+            tmp = cnf;
+            tmp.AddUnitClauseFront(-(std::abs(branch) + 1));
+            std::cout << "branch " << -(std::abs(branch) + 1) << std::endl;
+            solved = real_solver(tmp, std::abs(branch) + 1);
+
+            if (solved) {
+                std::cout << "SOLVED" << std::endl;
+                cnf = tmp;
+            }
+            return solved;
         }
     }
 
     bool DPLL(CNF &cnf) {
-        bool solved = real_solver(cnf, 1);
+        bool solved = real_solver(cnf, 0);
         return solved;
     }
 }

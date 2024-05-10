@@ -8,6 +8,7 @@
 #include "errormsg.h"
 
 namespace solver {
+
     void CNF::increase_usage_count(int p) {
         int ind = std::abs(p) - 1;
         if (p < 0) {
@@ -17,11 +18,20 @@ namespace solver {
         }
     }
 
-    void CNF::decrease_usage_count(int p) {
+    void CNF::decrease_usage_count_and_check_if_pure(int p) {
         int ind = std::abs(p) - 1;
+        //если после уменьшения счетчика станет pure (и не удалится из кнф) пихаем в очередь (хотим пихать только 1 раз)
         if (p < 0) {
+            if (variable_sign_usage_count_[ind].minus_ == 1 && variable_sign_usage_count_[ind].plus_ != 0) {
+                //кладём с получившимся в результате знаком
+                possible_pure_queue.push(std::abs(p) * (variable_sign_usage_count_[ind].plus_ > 0 ? 1 : -1));
+            }
             variable_sign_usage_count_[ind].minus_--;
         } else {
+            if (variable_sign_usage_count_[ind].plus_ == 1 && variable_sign_usage_count_[ind].minus_ != 0) {
+                //кладём с получившимся в результате знаком
+                possible_pure_queue.push(std::abs(p) * (variable_sign_usage_count_[ind].plus_ > 0 ? 1 : -1));
+            }
             variable_sign_usage_count_[ind].plus_--;
         }
     }
@@ -29,6 +39,12 @@ namespace solver {
     int CNF::get_usage_count(int p) {
         int ind = std::abs(p) - 1;
         return variable_sign_usage_count_[ind].plus_ + variable_sign_usage_count_[ind].minus_;
+    }
+
+    bool CNF::is_pure(int p) {
+        int i = std::abs(p) - 1;
+        return get_usage_count(p) > 0 && (variable_sign_usage_count_[i].plus_ == 0 ||
+                                          variable_sign_usage_count_[i].minus_ == 0);
     }
 
     void CNF::Init(std::ifstream &stream) {
@@ -60,7 +76,6 @@ namespace solver {
 
         int p, ind = 0;
         variable_sign_usage_count_.resize(variables_num_);
-        std::vector<bool> is_used(variables_num_, false);
         while (std::getline(stream, line)) {
 
             if (ind == clauses_num_) {
@@ -76,7 +91,7 @@ namespace solver {
                 }
                 tmp_clause.insert(p);
                 increase_usage_count(p);
-                is_used[std::abs(p) - 1] = true;
+
                 iss >> p;
             }
 
@@ -84,9 +99,11 @@ namespace solver {
             clauses_.push_back(std::move(tmp_clause));
             ind++;
         }
-
-        for (auto used: is_used) {
-            if (!used) throw std::invalid_argument(errors::kNotDIMACS);
+        for (int var = 1; var <= variables_num_; var++) {
+            if (get_usage_count(var) == 0) throw std::invalid_argument(errors::kNotDIMACS);
+            if (is_pure(var)) {
+                possible_pure_queue.push(var * (variable_sign_usage_count_[var - 1].minus_ == 0 ? 1 : -1));
+            }
         }
     }
 
@@ -145,12 +162,12 @@ namespace solver {
                     if (is_same_sign) { // если наша переменная входит в дизъюнкт с тем же знаком удаляем дизъюнкт
                         for (auto var: *target_clause_iterator) {
                             // уменьшаем число использований у всех переменных содержащихся в дизъюнкте
-                            decrease_usage_count(var);
+                            decrease_usage_count_and_check_if_pure(var);
                         }
                         clauses_.erase(target_clause_iterator);
                         clauses_num_--;
                     } else { // если переменная входит с другим знаком удаляем её из дизъюнкта
-                        decrease_usage_count(*literal_iterator);
+                        decrease_usage_count_and_check_if_pure(*literal_iterator);
                         target_clause_iterator->erase(literal_iterator);
                         if (target_clause_iterator->empty()) {
                             contains_empty_ = true;
@@ -167,56 +184,41 @@ namespace solver {
         }
     }
 
-    int CNF::find_pure() { //optimize?
-        for (int i = 0; i < variables_num_; i++) {
-            if (variable_sign_usage_count_[i].plus_ == 0 ||
-                variable_sign_usage_count_[i].minus_ == 0 &&
-                get_usage_count(i + 1) > 1) // //входит во все дизъюнкты с одним знаком (и дизъюнктов больше одного)
-                return i;
-        }
-        return -1;
-    }
-
+    //FIXME: возможны "холостые" срабатывания на unit_clausах (один раз макс)
     void CNF::PureLiterals() { // TODO: optimize?
-        //std::cout << "Literals" << std::endl;
-        int i = find_pure();
-        while (i != -1) {
-            int sign = variable_sign_usage_count_[i].plus_ != 0 ? 1 : -1;
-            int p = (i + 1) * sign;
-            std::cout << "current pure " << p << std::endl;
-            std::cout << "current cnf" << std::endl << ToString() << std::endl;
-            int ct;
-            std::cin
-                    >> ct;
-            auto contains_p = [this, p](Clause &clause) {
-                bool contains = clause.find(p) != clause.end();
-                if (contains) {
+        while (!possible_pure_queue.empty()) {
+            int p = possible_pure_queue.front();
+            possible_pure_queue.pop();
+            // пока проходило исполнение переменная могла перестать быть pure (была удалена из кнф полностью)
+            if (is_pure(p)) {
+                auto contains_p = [p](Clause &clause) { return clause.find(p) != clause.end(); };
+                auto target_clause_iterator = std::find_if(clauses_.begin(), clauses_.end(), contains_p);
+                while (target_clause_iterator != clauses_.end()) {
+                    auto next_iterator = std::next(target_clause_iterator);
                     clauses_num_--;
-                    for (auto i: clause) {
-                        decrease_usage_count(i);
+                    for (auto i: *target_clause_iterator) {
+                        decrease_usage_count_and_check_if_pure(i);
                     }
+                    clauses_.erase(target_clause_iterator);
+                    if (get_usage_count(p) == 0) {
+                        //обработали все дизъюнкты содержащие p
+                        break;
+                    }
+                    target_clause_iterator = std::find_if(next_iterator, clauses_.end(), contains_p);
                 }
-                return contains;
-            };
-            std::remove_if(clauses_.begin(), clauses_.end(), contains_p);
-            //std::cout << "after remove" << std::endl << CnfToString() << std::endl;
-            clauses_.emplace_front(p);
-            increase_usage_count(p);
-            //std::cout << "emplaced " << std::endl;
-            clauses_num_++;
-            i = find_pure();
-            //std::cout << "after emplace" << std::endl << CnfToString() << std::endl;
+                AddUnitClauseFront(p);
+            }
         }
-        //std::cout << "literals end" << std::endl;
     }
 
-    void CNF::AddClauseFront(int p) {
+    void CNF::AddUnitClauseFront(int p) {
         std::unordered_set<int> tmp = {p};
         clauses_.emplace_front(std::move(tmp));
+        increase_usage_count(p);
+        clauses_num_++;
     }
 
     bool CNF::IsInterpretation() {
-
         if (clauses_num_ != variables_num_) {
             return false;
         }
