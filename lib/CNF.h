@@ -56,9 +56,7 @@ namespace solver {
 
         //счетчик числа использований для pure literals
         std::vector<sign_counter> variable_sign_usage_count_;
-        //std::unordered_map
-        //переменная которая на данной ветке была обработана как pure
-        // уже не будет использована как pure повторно (на данной ветке)
+        std::unordered_map<int, int> assignment_;
         //TODO: rm public
         std::queue<int> possible_pure_queue;
         //очередь т.к. после инициализации в очереди лежат переменные которые точно pure
@@ -95,7 +93,13 @@ namespace solver {
 
         void UnitPropagation();
 
-        bool IsInterpretation();
+        bool IsInterpretation() const;
+
+        std::unordered_map<int, int> const &GetAssignment() {
+            return assignment_;
+        }
+
+        bool IsAssigned(int p) const;
 
         void PureLiterals();
     };

@@ -2,6 +2,7 @@
 
 #include "lib/CNF.h"
 #include "lib/DPLL.h"
+#include <set>
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -20,11 +21,22 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    solver::DPLL(cnf);
-    if (cnf.IsUnsat()) {
-        std::cout << "UNSAT" << std::endl;
+    bool solved = solver::DPLL(cnf);
+    if (!solved) {
+        std::cout << "s UNSATISFIABLE" << std::endl;
     } else {
-        std::cout << cnf.ToString() << std::endl;
+        std::cout << "s SATISFIABLE\n";
+        for (int i = 1; i <= cnf.GetVariablesNum(); i++) {
+            int p;
+            try {
+                p = cnf.GetAssignment().at(i);
+            }
+            catch (...) {
+                p = i;
+            }
+            std::cout << p << " ";
+        }
+        std::cout << "0" << std::endl;
     }
     return 0;
 }

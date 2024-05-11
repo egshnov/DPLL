@@ -5,39 +5,38 @@
 namespace solver {
 
     namespace {
-        bool real_solver(CNF &cnf, int branch) {
+
+        bool real_solver(CNF &cnf, int next_to_assign) {
             cnf.UnitPropagation();
 
             if (cnf.IsUnsat()) {
-                std::cout << cnf.ToString() << std::endl;// только UnitPropagation генерирует пустые
                 return false;
             }
 
+            //TODO: могли вычистить неприсвоенные
+            if (cnf.IsInterpretation()) return true; // т.к. только UnitPropagation присваивает значение и вычищает кнф
             cnf.PureLiterals();
-            if (cnf.IsInterpretation()) return true; //TODO: optimize
 
-            if (std::abs(branch) + 1 > cnf.GetVariablesNum()) {
-                return false;
+            while (cnf.IsAssigned(next_to_assign)) {
+                if (next_to_assign > cnf.GetVariablesNum()) {
+                    return false;
+                }
+                next_to_assign++;
             }
 
             CNF tmp = cnf;
-            tmp.AddUnitClauseFront(std::abs(branch) + 1);
-            std::cout << "branch " << std::abs(branch) + 1 << std::endl;
-            bool solved = real_solver(tmp, std::abs(branch) + 1);
+            tmp.AddUnitClauseFront(next_to_assign);
+            bool solved = real_solver(tmp, next_to_assign + 1);
 
             if (solved) {
                 cnf = tmp;
-                //std::cout << "SOLVED" << std::endl;
                 return true;
             }
 
             tmp = cnf;
-            tmp.AddUnitClauseFront(-(std::abs(branch) + 1));
-            std::cout << "branch " << -(std::abs(branch) + 1) << std::endl;
-            solved = real_solver(tmp, std::abs(branch) + 1);
-
+            tmp.AddUnitClauseFront(-next_to_assign);
+            solved = real_solver(tmp, next_to_assign + 1);
             if (solved) {
-                std::cout << "SOLVED" << std::endl;
                 cnf = tmp;
             }
             return solved;
@@ -45,7 +44,13 @@ namespace solver {
     }
 
     bool DPLL(CNF &cnf) {
-        bool solved = real_solver(cnf, 0);
+        CNF tmp = cnf;
+        bool solved = real_solver(tmp, 1);
+
+        if (solved) {
+            cnf = tmp;
+        }
+
         return solved;
     }
 }
