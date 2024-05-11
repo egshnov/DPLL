@@ -1,5 +1,4 @@
 #include "CNF.h"
-#include <iostream>
 #include <fstream>
 #include <string>
 #include <sstream>
@@ -23,14 +22,15 @@ namespace solver {
         //если после уменьшения счетчика станет pure (и не удалится из кнф) кладем в очередь (хотим класть только 1 раз без повторов)
         if (p < 0) {
             if (variable_sign_usage_count_[ind].minus_ == 1 && variable_sign_usage_count_[ind].plus_ != 0) {
-                //кладём с получившимся в результате знаком
-                possible_pure_queue.push(std::abs(p) * (variable_sign_usage_count_[ind].plus_ > 0 ? 1 : -1));
+                //стал pure после того как уменьшилось кол-во вхождений с минусом -> pure c +
+                possible_pure_queue.push(-p); //знаем что p<0
+
             }
             variable_sign_usage_count_[ind].minus_--;
         } else {
             if (variable_sign_usage_count_[ind].plus_ == 1 && variable_sign_usage_count_[ind].minus_ != 0) {
-                //кладём с получившимся в результате знаком
-                possible_pure_queue.push(std::abs(p) * (variable_sign_usage_count_[ind].plus_ > 0 ? 1 : -1));
+                //стал pure после того как уменьшилось кол-во вхождений с плюсом -> pure c -
+                possible_pure_queue.push(-p); //знаем что p > 0
             }
             variable_sign_usage_count_[ind].plus_--;
         }
@@ -99,6 +99,8 @@ namespace solver {
             clauses_.push_back(std::move(tmp_clause));
             ind++;
         }
+
+        //все переменные входят в кнф?
         for (int var = 1; var <= variables_num_; var++) {
             if (get_usage_count(var) == 0) throw std::invalid_argument(errors::kNotDIMACS);
             if (is_pure(var)) {
@@ -132,7 +134,7 @@ namespace solver {
 
     void CNF::UnitPropagation() { //TODO: split?
         //ищем среди дизъюнктов unit_clause такой что его переменная содержится в других дизъюнктах (иначе нет смысла его рассматривать)
-        auto is_unit = [this](const Clause &clause) {
+        auto is_unit = [](const Clause &clause) {
             return clause.size() == 1;
         };
 
@@ -140,7 +142,7 @@ namespace solver {
 
         while (unit_clause_iterator != clauses_.end()) { // для всех подходящих unit_clause применяем UnitResolution
             int p = *(unit_clause_iterator->begin());
-            assignment_[std::abs(p)] = p;
+            model_[std::abs(p)] = p;
             bool is_same_sign; // с каким знаком входит в найденный дизъюнкт
             decltype(unit_clause_iterator->begin()) literal_iterator; //итератор из на элемент unordered_set<int>
 
@@ -175,7 +177,10 @@ namespace solver {
                         return;
                     }
                 }
-
+                if (get_usage_count(p) == 0) {
+                    //обработали все дизъюнкты содержащие p
+                    break;
+                }
                 target_clause_iterator = std::find_if(next_iterator, clauses_.end(),
                                                       contains_p);
             }
@@ -220,10 +225,10 @@ namespace solver {
     }
 
     bool CNF::IsAssigned(int p) const {
-        return assignment_.find(std::abs(p)) != assignment_.end();
+        return model_.find(p) != model_.end();
     }
 
-    bool CNF::IsInterpretation() const {
+    bool CNF::IsSat() const {
         return clauses_.empty();
     }
 }

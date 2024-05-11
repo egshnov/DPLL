@@ -1,6 +1,5 @@
 #include "DPLL.h"
 #include "CNF.h"
-#include <iostream> //TODO: rm
 
 namespace solver {
 
@@ -8,13 +7,12 @@ namespace solver {
 
         bool real_solver(CNF &cnf, int next_to_assign) {
             cnf.UnitPropagation();
-
             if (cnf.IsUnsat()) {
                 return false;
             }
 
-            //TODO: могли вычистить неприсвоенные
-            if (cnf.IsInterpretation()) return true; // т.к. только UnitPropagation присваивает значение и вычищает кнф
+            if (cnf.IsSat()) return true; // т.к. только UnitPropagation присваивает значение и вычищает кнф
+
             cnf.PureLiterals();
 
             while (cnf.IsAssigned(next_to_assign)) {

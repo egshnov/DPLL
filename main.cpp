@@ -1,8 +1,7 @@
 #include <iostream>
 
-#include "lib/CNF.h"
-#include "lib/DPLL.h"
-#include <set>
+#include "CNF.h"
+#include "DPLL.h"
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -25,7 +24,7 @@ int main(int argc, char *argv[]) {
     if (!solved) {
         std::cout << "s UNSATISFIABLE" << std::endl;
     } else {
-        std::cout << "s SATISFIABLE\n";
+        std::cout << "s SATISFIABLE\nv ";
         for (int i = 1; i <= cnf.GetVariablesNum(); i++) {
             int p;
             try {
