@@ -50,7 +50,7 @@ TEST(DPLLHeuristics, UnitPropagation) {
     test_propagation("propagate1.cnf", "-2 -1 0\n-2 1 0\n");
     test_propagation("propagate2.cnf", "");
     test_propagation("propagate3.cnf", "");
-    test_propagation("propagate4.cnf", "0\n");
+    test_propagation("propagate4.cnf", "0\n-4 0\n"); //выходит до того как обработает все unit
     test_propagation("propagate5.cnf",
                      "4 3 0\n4 6 -2 0\n-3 -6 -2 0\n-2 -4 0\n-3 2 0\n3 6 2 0\n-4 -6 2 0\n-5 3 -6 0\n");
 
@@ -74,9 +74,23 @@ TEST(DPLLHeuristics, PureLiterals) {
 
 //TODO: fix filepath
 TEST(DPLL, small) {
-    solver::CNF cnf;
-    EXPECT_NO_THROW(cnf.Parse("../../tests/test_input_data/small.cnf"));
-    solver::DPLL(cnf);
-    //EXPECT_TRUE(cnf.IsUnsat());
-    std::cerr << cnf.ToString();
+    {
+        solver::CNF cnf;
+        EXPECT_NO_THROW(cnf.Parse("../../tests/test_input_data/small.cnf"));
+        bool solved = solver::DPLL(cnf);
+        EXPECT_TRUE(solved);
+    }
+    {
+        solver::CNF cnf;
+        EXPECT_NO_THROW(cnf.Parse("../../tests/test_input_data/uf20-04.cnf"));
+        bool solved = solver::DPLL(cnf);
+        EXPECT_TRUE(solved);
+    }
+    {
+        solver::CNF cnf;
+        EXPECT_NO_THROW(cnf.Parse("../../tests/test_input_data/propagate4.cnf"));
+        bool solved = solver::DPLL(cnf);
+        EXPECT_FALSE(solved);
+    }
+
 }
