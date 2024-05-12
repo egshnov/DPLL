@@ -23,6 +23,8 @@ jobs:
         run: |
           cd build
           make test
+        env:
+          CI: true
       - name: Verify
         run: |
           cd tests
