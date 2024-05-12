@@ -1,11 +1,12 @@
 import os
 import subprocess
 import time
+import sys
 
 from colorama import Fore, Style
 
-input_data =  'test_input_data' #'res'
-#input_data = 'res'
+input_data = 'test_input_data'  # 'res'
+# input_data = 'res'
 picosat = 'picosat'
 my_solver = '../build/DPLL'
 
@@ -31,7 +32,7 @@ def create_tmp_cnf(path, model):
 
 
 for cnf in os.scandir(input_data):
-    if 'Gilgamesh.cnf' not in cnf.path:
+    if 'Gilgamesh.cnf' not in cnf.path and "big.cnf" not in cnf.path:
         # запускаем наш солвер
         start = time.time()
         my_sat_res = subprocess.run([my_solver, cnf.path], stdout=subprocess.PIPE)
@@ -44,7 +45,7 @@ for cnf in os.scandir(input_data):
 
         # запускаем picosat на копии
         pico_res = subprocess.run([picosat, 'tmp.cnf'], stdout=subprocess.PIPE)
-        os.remove('tmp.cnf')
+        #os.remove('tmp.cnf')
 
         my_output = " ".join(my_output).replace('v', '').replace('  ', ' ')
         pico_output = " ".join(str(pico_res.stdout).replace('v', '').split('\\n')).replace("  ", " ")
@@ -57,4 +58,7 @@ for cnf in os.scandir(input_data):
         else:
             print(f"{cnf.path.split('/')[-1]} is {Fore.RED}wrong{Style.RESET_ALL}",
                   'elapsed time: {:.2f}'.format(end - start))
-            os.exit(-1)
+            print(pico_output)
+            print()
+            print(my_output)
+            sys.exit(-1)
