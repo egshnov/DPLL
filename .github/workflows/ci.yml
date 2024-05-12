@@ -22,7 +22,8 @@ jobs:
       - name: Unit_Tests
         run: |
           cd build
-          make test
+          cd tests
+          ./tests_run
         env:
           CI: true
       - name: Verify
