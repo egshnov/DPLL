@@ -15,6 +15,7 @@ namespace solver {
 
             cnf.PureLiterals();
 
+            //выбираем переменную которой будет присвоено значение
             while (cnf.IsAssigned(next_to_assign)) {
                 if (next_to_assign > cnf.GetVariablesNum()) {
                     return false;
@@ -44,11 +45,9 @@ namespace solver {
     bool DPLL(CNF &cnf) {
         CNF tmp = cnf;
         bool solved = real_solver(tmp, 1);
-
         if (solved) {
             cnf = tmp;
         }
-
         return solved;
     }
 }

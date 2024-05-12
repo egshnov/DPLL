@@ -53,7 +53,6 @@ namespace solver {
 
         //Очередь т.к. после инициализации в очереди лежат переменные которые точно pure
         std::queue<int> possible_pure_queue;
-
         int variables_num_;
         int clauses_num_;
         bool contains_empty_ = false;
@@ -71,6 +70,10 @@ namespace solver {
     public:
         CNF() = default;
 
+        bool IsSat() const {
+            return clauses_.empty();
+        }
+
         [[nodiscard]] bool IsUnsat() const {
             return contains_empty_;
         }
@@ -86,8 +89,6 @@ namespace solver {
         void Parse(const std::string &filename);
 
         void UnitPropagation();
-
-        bool IsSat() const;
 
         std::unordered_map<int, int> const &GetAssignment() {
             return model_;

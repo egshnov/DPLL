@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include "errormsg.h"
+#include <stack>
 
 namespace solver {
 
@@ -23,7 +24,7 @@ namespace solver {
         if (p < 0) {
             if (variable_sign_usage_count_[ind].minus_ == 1 && variable_sign_usage_count_[ind].plus_ != 0) {
                 //стал pure после того как уменьшилось кол-во вхождений с минусом -> pure c +
-                possible_pure_queue.push(-p); //знаем что p<0
+                possible_pure_queue.push(-p); //знаем что p < 0
 
             }
             variable_sign_usage_count_[ind].minus_--;
@@ -132,19 +133,37 @@ namespace solver {
         return result;
     }
 
-    void CNF::UnitPropagation() { //TODO: split?
-        //ищем среди дизъюнктов unit_clause такой что его переменная содержится в других дизъюнктах (иначе нет смысла его рассматривать)
-        auto is_unit = [](const Clause &clause) {
-            return clause.size() == 1;
+    void CNF::UnitPropagation() {
+        //находим все unit_clause и кладем в очередь те чьи переменные попались в первый раз
+        std::queue<decltype(clauses_.begin())> units_queue;
+        std::vector<bool> is_in_queue(variables_num_, false);
+
+        auto is_unit = [&is_in_queue](const Clause &clause) {
+            if (clause.size() == 1) {
+                int ind = std::abs(*clause.begin()) - 1;
+                if (!is_in_queue[ind]) {
+                    is_in_queue[ind] = true;
+                    return true;
+                }
+            }
+            return false;
         };
 
         auto unit_clause_iterator = std::find_if(clauses_.begin(), clauses_.end(), is_unit);
+        while (unit_clause_iterator != clauses_.end()) {
+            auto next_iterator = std::next(unit_clause_iterator);
+            units_queue.push(unit_clause_iterator);
+            unit_clause_iterator = std::find_if(next_iterator, clauses_.end(), is_unit);
+        }
 
-        while (unit_clause_iterator != clauses_.end()) { // для всех подходящих unit_clause применяем UnitResolution
+
+        while (!units_queue.empty()) {
+            unit_clause_iterator = units_queue.front();
+            units_queue.pop();
             int p = *(unit_clause_iterator->begin());
             model_[std::abs(p)] = p;
             bool is_same_sign; // с каким знаком входит в найденный дизъюнкт
-            decltype(unit_clause_iterator->begin()) literal_iterator; //итератор из на элемент unordered_set<int>
+            decltype(unit_clause_iterator->begin()) literal_iterator; //итератор на элемент unordered_set<int> clause
 
             auto contains_p = [p, &is_same_sign, &literal_iterator](Clause &clause) {
                 literal_iterator = clause.find(p);
@@ -175,20 +194,25 @@ namespace solver {
                     if (target_clause_iterator->empty()) {
                         contains_empty_ = true;
                         return;
+                    } else if (target_clause_iterator->size() == 1) {
+                        int ind = std::abs(*target_clause_iterator->begin()) - 1;
+
+                        if (!is_in_queue[ind]) {
+                            units_queue.push(target_clause_iterator);
+                            is_in_queue[ind] = true;
+                        }
                     }
                 }
                 if (get_usage_count(p) == 0) {
-                    //обработали все дизъюнкты содержащие p
                     break;
                 }
                 target_clause_iterator = std::find_if(next_iterator, clauses_.end(),
                                                       contains_p);
             }
-
-            unit_clause_iterator = std::find_if(clauses_.begin(), clauses_.end(),
-                                                is_unit); //FIXME: ultra slow
         }
+
     }
+
 
     //FIXME: возможны "холостые" срабатывания на unit_clausах (один раз макс)
     void CNF::PureLiterals() { // TODO: optimize?
@@ -228,7 +252,4 @@ namespace solver {
         return model_.find(p) != model_.end();
     }
 
-    bool CNF::IsSat() const {
-        return clauses_.empty();
-    }
 }
