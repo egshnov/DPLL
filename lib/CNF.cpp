@@ -134,26 +134,26 @@ namespace solver {
     }
 
     void CNF::UnitPropagation() {
-        //находим все unit_clause и кладем в очередь те чьи переменные попались в первый раз
+        //находим все unit_clause и кладем в очередь те чьи переменные попались в первый раз (иначе инвалидируется итератор)
         std::queue<decltype(clauses_.begin())> units_queue;
-        std::vector<bool> is_in_queue(variables_num_, false);
+        std::vector<bool> variable_is_in_queue(variables_num_, false);
 
-        auto is_unit = [&is_in_queue](const Clause &clause) {
+        auto is_appropriate_unit = [&variable_is_in_queue](const Clause &clause) {
             if (clause.size() == 1) {
                 int ind = std::abs(*clause.begin()) - 1;
-                if (!is_in_queue[ind]) {
-                    is_in_queue[ind] = true;
+                if (!variable_is_in_queue[ind]) {
+                    variable_is_in_queue[ind] = true;
                     return true;
                 }
             }
             return false;
         };
 
-        auto unit_clause_iterator = std::find_if(clauses_.begin(), clauses_.end(), is_unit);
+        auto unit_clause_iterator = std::find_if(clauses_.begin(), clauses_.end(), is_appropriate_unit);
         while (unit_clause_iterator != clauses_.end()) {
             auto next_iterator = std::next(unit_clause_iterator);
             units_queue.push(unit_clause_iterator);
-            unit_clause_iterator = std::find_if(next_iterator, clauses_.end(), is_unit);
+            unit_clause_iterator = std::find_if(next_iterator, clauses_.end(), is_appropriate_unit);
         }
 
 
@@ -197,12 +197,13 @@ namespace solver {
                     } else if (target_clause_iterator->size() == 1) {
                         int ind = std::abs(*target_clause_iterator->begin()) - 1;
 
-                        if (!is_in_queue[ind]) {
+                        if (!variable_is_in_queue[ind]) {
                             units_queue.push(target_clause_iterator);
-                            is_in_queue[ind] = true;
+                            variable_is_in_queue[ind] = true;
                         }
                     }
                 }
+                //обошли все дизъюнкты содержащие p
                 if (get_usage_count(p) == 0) {
                     break;
                 }
@@ -213,8 +214,6 @@ namespace solver {
 
     }
 
-
-    //FIXME: возможны "холостые" срабатывания на unit_clausах (один раз макс)
     void CNF::PureLiterals() { // TODO: optimize?
         while (!possible_pure_queue.empty()) {
             int p = possible_pure_queue.front();

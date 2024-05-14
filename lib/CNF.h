@@ -48,7 +48,6 @@ namespace solver {
 
         //счетчик числа использований для pure literals
         std::vector<sign_counter> variable_sign_usage_count_;
-
         std::unordered_map<int, int> model_;
 
         //Очередь т.к. после инициализации в очереди лежат переменные которые точно pure
@@ -82,6 +81,14 @@ namespace solver {
             return variables_num_;
         }
 
+        [[nodiscard]] int GetClausesNum() const {
+            return clauses_num_;
+        }
+
+        std::unordered_map<int, int> const &GetAssignment() {
+            return model_;
+        }
+
         void AddUnitClauseFront(int p);
 
         std::string ToString();
@@ -89,10 +96,6 @@ namespace solver {
         void Parse(const std::string &filename);
 
         void UnitPropagation();
-
-        std::unordered_map<int, int> const &GetAssignment() {
-            return model_;
-        }
 
         bool IsAssigned(int p) const;
 

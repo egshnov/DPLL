@@ -20,7 +20,9 @@ int main(int argc, char *argv[]) {
         std::cerr << error_message << std::endl;
         return -1;
     }
-
+//    std::cout << "variables:" << cnf.GetVariablesNum() << std::endl;
+//    std::cout << "clauses:" << cnf.GetClausesNum() << std::endl;
+    //TODO: rm time
     std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::steady_clock::now();
     bool solved = solver::DPLL(cnf);
     std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
