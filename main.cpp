@@ -33,15 +33,14 @@ int main(int argc, char *argv[]) {
         std::cout << "s UNSATISFIABLE" << std::endl;
     } else {
         std::cout << "s SATISFIABLE\nv ";
-        for (int i = 1; i <= cnf.GetVariablesNum(); i++) {
-            int p;
-            try {
-                p = cnf.GetAssignment().at(i);
+        for (int i = 0; i < cnf.GetVariablesNum(); i++) {
+            int sign = cnf.GetModel()[i];
+            if (sign == 0) {
+                std::cout << i + 1 << " ";
+            } else {
+                std::cout << (i + 1) * sign << " ";
             }
-            catch (...) {
-                p = i;
-            }
-            std::cout << p << " ";
+            //std::cout << (i+1) * () << " ";
         }
         std::cout << "0" << std::endl;
     }

@@ -10,6 +10,7 @@ input_data = 'test_input_data'  # 're# s'
 # input_data = 'another'
 picosat = 'picosat'
 my_solver = '../build/DPLL'
+kksat = './kksat'
 
 
 def create_tmp_cnf(path, model):
@@ -33,6 +34,7 @@ def create_tmp_cnf(path, model):
 
 
 for cnf in os.scandir(input_data):
+    #if "random.cnf" in cnf.path:
     if 'Gilgamesh.cnf' not in cnf.path and "big.cnf" not in cnf.path and "my_bench.cnf" not in cnf.path:
         # print(cnf.path)
         # запускаем наш солвер

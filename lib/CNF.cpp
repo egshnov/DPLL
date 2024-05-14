@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include "errormsg.h"
-#include <stack>
+#include <queue>
 
 namespace solver {
 
@@ -77,6 +77,7 @@ namespace solver {
 
         int p, ind = 0;
         variable_sign_usage_count_.resize(variables_num_);
+        model_.resize(variables_num_, 0);
         while (std::getline(stream, line)) {
 
             if (ind == clauses_num_) {
@@ -134,6 +135,7 @@ namespace solver {
     }
 
     void CNF::UnitPropagation() {
+        //TODO:
         //находим все unit_clause и кладем в очередь те чьи переменные попались в первый раз (иначе инвалидируется итератор)
         std::queue<decltype(clauses_.begin())> units_queue;
         std::vector<bool> variable_is_in_queue(variables_num_, false);
@@ -161,7 +163,7 @@ namespace solver {
             unit_clause_iterator = units_queue.front();
             units_queue.pop();
             int p = *(unit_clause_iterator->begin());
-            model_[std::abs(p)] = p;
+            model_[std::abs(p) - 1] = p < 0 ? -1 : 1;
             bool is_same_sign; // с каким знаком входит в найденный дизъюнкт
             decltype(unit_clause_iterator->begin()) literal_iterator; //итератор на элемент unordered_set<int> clause
 
@@ -195,6 +197,7 @@ namespace solver {
                         contains_empty_ = true;
                         return;
                     } else if (target_clause_iterator->size() == 1) {
+                        //если дизъюнкт теперь unit кладём в очередь (если дизъюнкт с такой переменной ещё не в очереди)
                         int ind = std::abs(*target_clause_iterator->begin()) - 1;
 
                         if (!variable_is_in_queue[ind]) {
@@ -214,12 +217,24 @@ namespace solver {
 
     }
 
-    void CNF::PureLiterals() { // TODO: optimize?
+//    bool CNF::PureLiterals() {
+//        bool added_unit = false;
+//        std::unordered_set<int> pure_literals;
+//        for (const auto &i: clauses_) {
+//            for (auto var: clauses_) {
+//
+//            }
+//        }
+//    }
+//
+    bool CNF::PureLiterals() { // TODO: optimize?
+        bool added_unit = false;
         while (!possible_pure_queue.empty()) {
             int p = possible_pure_queue.front();
             possible_pure_queue.pop();
             // пока проходило исполнение переменная могла перестать быть pure (была удалена из кнф полностью)
             if (is_pure(p)) {
+                added_unit = true;
                 auto contains_p = [p](Clause &clause) { return clause.find(p) != clause.end(); };
                 auto target_clause_iterator = std::find_if(clauses_.begin(), clauses_.end(), contains_p);
                 while (target_clause_iterator != clauses_.end()) {
@@ -238,6 +253,7 @@ namespace solver {
                 AddUnitClauseFront(p);
             }
         }
+        return added_unit;
     }
 
     void CNF::AddUnitClauseFront(int p) {
@@ -248,7 +264,7 @@ namespace solver {
     }
 
     bool CNF::IsAssigned(int p) const {
-        return model_.find(p) != model_.end();
+        return model_[std::abs(p) - 1] != 0;
     }
 
 }
