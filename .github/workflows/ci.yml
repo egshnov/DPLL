@@ -21,7 +21,7 @@ jobs:
 
       - name: Verify
         run: |
-          cd tests
+          cd test
           sudo apt install picosat
           python3 ./verify.py
         env:
