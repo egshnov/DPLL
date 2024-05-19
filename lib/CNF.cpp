@@ -1,11 +1,12 @@
-#include "CNF.h"
 #include <fstream>
 #include <string>
 #include <sstream>
 #include <algorithm>
 #include <stdexcept>
-#include "errormsg.h"
 #include <queue>
+
+#include "CNF.h"
+#include "errormsg.h"
 
 namespace solver {
 

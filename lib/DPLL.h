@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+
 #include "CNF.h"
 
 namespace solver {
