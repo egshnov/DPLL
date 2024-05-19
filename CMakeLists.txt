@@ -6,7 +6,6 @@ project(DPLL)
 set(CMAKE_CXX_STANDARD 20)
 add_executable(DPLL main.cpp)
 
-enable_testing()
 
 add_subdirectory(lib)
 
