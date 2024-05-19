@@ -1,25 +1,27 @@
 #include "DPLL.h"
 #include "CNF.h"
+#include <iostream>
 
 namespace solver {
 
     namespace {
 
         bool real_solver(CNF &cnf, int next_to_assign) {
-            cnf.UnitPropagation();
-            if (cnf.IsUnsat()) {
-                return false;
+            bool can_simlify = true;
+            while (can_simlify) {
+                cnf.UnitPropagation();
+                if (cnf.IsUnsat()) {
+                    return false;
+                }
+
+                if (cnf.IsSat()) return true; // т.к. только UnitPropagation присваивает значение и вычищает кнф
+
+                can_simlify = cnf.PureLiterals();
             }
-
-            if (cnf.IsSat()) return true; // т.к. только UnitPropagation присваивает значение и вычищает кнф
-
-            cnf.PureLiterals();
 
             //выбираем переменную которой будет присвоено значение
             while (cnf.IsAssigned(next_to_assign)) {
-                if (next_to_assign > cnf.GetVariablesNum()) {
-                    return false;
-                }
+                //найдется т.к. модель не пустая
                 next_to_assign++;
             }
 
