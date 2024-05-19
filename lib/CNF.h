@@ -4,7 +4,6 @@
 #include <string>
 #include <fstream>
 #include <vector>
-#include <unordered_map>
 #include <list>
 #include <queue>
 
@@ -48,13 +47,11 @@ namespace solver {
 
         //счетчик числа использований для pure literals
         std::vector<sign_counter> variable_sign_usage_count_;
-        //TODO: возможно надо unordered_map чтобы не тащить не присвоенные в рекурсию
         std::vector<char> model_;
 
         //Очередь т.к. после инициализации в очереди лежат переменные которые точно pure
         std::queue<int> possible_pure_queue_;
         int variables_num_;
-        int clauses_num_;
         bool contains_empty_ = false;
 
         void increase_usage_count(int p);
@@ -70,7 +67,7 @@ namespace solver {
     public:
         CNF() = default;
 
-        bool IsSat() const {
+        [[nodiscard]] bool IsSat() const {
             return clauses_.empty();
         }
 
@@ -82,21 +79,11 @@ namespace solver {
             return variables_num_;
         }
 
-        [[nodiscard]] int GetClausesNum() const {
-            return clauses_num_;
-        }
-
         std::vector<char> const &GetModel() {
             return model_;
         }
 
         void AddUnitClauseFront(int p);
-
-        std::string ToString();
-
-        int GetFirstVar() {
-            return *(clauses_.begin()->begin());
-        }
 
         void Parse(const std::string &filename);
 

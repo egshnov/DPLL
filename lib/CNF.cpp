@@ -51,7 +51,7 @@ namespace solver {
     void CNF::Init(std::ifstream &stream) {
         std::string line, tmp;
         std::getline(stream, line);
-
+        int clauses_num;
         //parse comments
         while (line[0] == 'c') {
             std::getline(stream, line);
@@ -68,8 +68,8 @@ namespace solver {
             if (tmp != "cnf") {
                 throw std::invalid_argument(errors::kNotDIMACS);
             }
-            iss >> variables_num_ >> clauses_num_;
-            if (variables_num_ <= 0 || clauses_num_ <= 0) {
+            iss >> variables_num_ >> clauses_num;
+            if (variables_num_ <= 0 || clauses_num <= 0) {
                 throw std::invalid_argument(errors::kNotDIMACS);
             }
 
@@ -80,7 +80,7 @@ namespace solver {
         model_.resize(variables_num_, 0);
         while (std::getline(stream, line)) {
 
-            if (ind == clauses_num_) {
+            if (ind == clauses_num) {
                 throw std::invalid_argument(errors::kNotDIMACS);
             }
 
@@ -93,7 +93,7 @@ namespace solver {
                 }
 
                 //если в строке повторяются переменные с одним знаком например -1 -1 0
-                 if (tmp_clause.find(p) == tmp_clause.end()) {
+                if (tmp_clause.find(p) == tmp_clause.end()) {
                     increase_usage_count(p);
                 }
 
@@ -126,17 +126,6 @@ namespace solver {
         catch (const std::string &error_message) {
             throw std::invalid_argument(error_message);
         }
-    }
-
-    std::string CNF::ToString() {
-        std::string result;
-        for (const auto &c: clauses_) {
-            for (auto it: c) {
-                result += std::to_string(it) + " ";
-            }
-            result += "0\n";
-        }
-        return result;
     }
 
     void CNF::UnitPropagation() {
@@ -192,7 +181,6 @@ namespace solver {
                         decrease_usage_count_and_check_if_pure(var);
                     }
                     clauses_.erase(target_clause_iterator);
-                    clauses_num_--;
                 } else { // если переменная входит с другим знаком удаляем её из дизъюнкта
                     decrease_usage_count_and_check_if_pure(*literal_iterator);
                     target_clause_iterator->erase(literal_iterator);
@@ -222,7 +210,7 @@ namespace solver {
     }
 
 
-    bool CNF::PureLiterals() { // TODO: optimize?
+    bool CNF::PureLiterals() {
         bool added_unit = false;
         while (!possible_pure_queue_.empty()) {
             int p = possible_pure_queue_.front();
@@ -234,7 +222,6 @@ namespace solver {
                 auto target_clause_iterator = std::find_if(clauses_.begin(), clauses_.end(), contains_p);
                 while (target_clause_iterator != clauses_.end()) {
                     auto next_iterator = std::next(target_clause_iterator);
-                    clauses_num_--;
                     for (auto i: *target_clause_iterator) {
                         decrease_usage_count_and_check_if_pure(i);
                     }
@@ -245,7 +232,7 @@ namespace solver {
                     }
                     target_clause_iterator = std::find_if(next_iterator, clauses_.end(), contains_p);
                 }
-                    AddUnitClauseFront(p);
+                AddUnitClauseFront(p);
             }
         }
         return added_unit;
@@ -255,7 +242,6 @@ namespace solver {
         std::unordered_set<int> tmp = {p};
         clauses_.emplace_front(std::move(tmp));
         increase_usage_count(p);
-        clauses_num_++;
     }
 
     bool CNF::IsAssigned(int p) const {
