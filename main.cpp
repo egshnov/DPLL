@@ -20,14 +20,8 @@ int main(int argc, char *argv[]) {
         std::cerr << error_message << std::endl;
         return -1;
     }
-//    std::cout << "variables:" << cnf.GetVariablesNum() << std::endl;
-//    std::cout << "clauses:" << cnf.GetClausesNum() << std::endl;
-    //TODO: rm time
-    std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::steady_clock::now();
-    bool solved = solver::DPLL(cnf);
-    std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
-    std::chrono::duration<double> time_span = duration_cast<std::chrono::duration<double>>(t2 - t1);
 
+    bool solved = solver::DPLL(cnf);
 
     if (!solved) {
         std::cout << "s UNSATISFIABLE" << std::endl;
@@ -40,10 +34,8 @@ int main(int argc, char *argv[]) {
             } else {
                 std::cout << (i + 1) * sign << " ";
             }
-            //std::cout << (i+1) * () << " ";
         }
         std::cout << "0" << std::endl;
     }
-    //std::cout << "elapsed time: " << time_span.count() << std::endl;
     return 0;
 }
