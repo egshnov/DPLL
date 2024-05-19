@@ -140,7 +140,6 @@ namespace solver {
     }
 
     void CNF::UnitPropagation() {
-        //TODO:
         //находим все unit_clause и кладем в очередь те чьи переменные попались в первый раз (иначе инвалидируется итератор)
         std::queue<decltype(clauses_.begin())> units_queue;
         std::vector<bool> variable_is_in_queue(variables_num_, false);
