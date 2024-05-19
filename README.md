@@ -13,4 +13,5 @@ To run unit tests do the following:
 # Verifying solver
 You need picosat and python3  
 `cd tests`  
-`python3 ./verify.py`
+`python3 ./verify.py`  
+**Note:** if your build directory name differs from 'build' you should change variable my_solver in `verify.py` script
