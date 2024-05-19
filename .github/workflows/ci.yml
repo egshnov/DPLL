@@ -3,7 +3,7 @@ on: [ push,pull_request ]
 
 
 jobs:
-  unit-tests:
+  verify:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
