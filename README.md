@@ -3,9 +3,9 @@ Implementation of a simple DPLL sat solver
 # Build
 To build the library do the following:  
 `mkdir build`  
+`cmake -B build`  
 `cd build`  
-`cmake -DCMAKE_BUILD_TYPE=Release ..`  
-`make`
+`make`  
 # Verifying solver
 You need picosat and python3  
 `cd tests`  
