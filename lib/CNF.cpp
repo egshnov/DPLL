@@ -24,14 +24,14 @@ namespace solver {
         if (p < 0) {
             if (variable_sign_usage_count_[ind].minus_ == 1 && variable_sign_usage_count_[ind].plus_ != 0) {
                 //стал pure после того как уменьшилось кол-во вхождений с минусом -> pure c +
-                possible_pure_queue.push(-p); //знаем что p < 0
+                possible_pure_queue_.push(-p); //знаем что p < 0
 
             }
             variable_sign_usage_count_[ind].minus_--;
         } else {
             if (variable_sign_usage_count_[ind].plus_ == 1 && variable_sign_usage_count_[ind].minus_ != 0) {
                 //стал pure после того как уменьшилось кол-во вхождений с плюсом -> pure c -
-                possible_pure_queue.push(-p); //знаем что p > 0
+                possible_pure_queue_.push(-p); //знаем что p > 0
             }
             variable_sign_usage_count_[ind].plus_--;
         }
@@ -91,8 +91,13 @@ namespace solver {
                 if (std::abs(p) > variables_num_) {
                     throw std::invalid_argument(errors::kNotDIMACS);
                 }
+
+                //если в строке повторяются переменные с одним знаком например -1 -1 0
+                 if (tmp_clause.find(p) == tmp_clause.end()) {
+                    increase_usage_count(p);
+                }
+
                 tmp_clause.insert(p);
-                increase_usage_count(p);
 
                 iss >> p;
             }
@@ -106,7 +111,7 @@ namespace solver {
         for (int var = 1; var <= variables_num_; var++) {
             if (get_usage_count(var) == 0) throw std::invalid_argument(errors::kNotDIMACS);
             if (is_pure(var)) {
-                possible_pure_queue.push(var * (variable_sign_usage_count_[var - 1].minus_ == 0 ? 1 : -1));
+                possible_pure_queue_.push(var * (variable_sign_usage_count_[var - 1].minus_ == 0 ? 1 : -1));
             }
         }
     }
@@ -182,7 +187,6 @@ namespace solver {
 
             while (target_clause_iterator != clauses_.end()) {
                 auto next_iterator = std::next(target_clause_iterator); // итератор на элемент следующий за найденным
-
                 if (is_same_sign) { // если наша переменная входит в дизъюнкт с тем же знаком удаляем дизъюнкт
                     for (auto var: *target_clause_iterator) {
                         // уменьшаем число использований у всех переменных содержащихся в дизъюнкте
@@ -206,6 +210,7 @@ namespace solver {
                         }
                     }
                 }
+
                 //обошли все дизъюнкты содержащие p
                 if (get_usage_count(p) == 0) {
                     break;
@@ -217,21 +222,12 @@ namespace solver {
 
     }
 
-//    bool CNF::PureLiterals() {
-//        bool added_unit = false;
-//        std::unordered_set<int> pure_literals;
-//        for (const auto &i: clauses_) {
-//            for (auto var: clauses_) {
-//
-//            }
-//        }
-//    }
-//
+
     bool CNF::PureLiterals() { // TODO: optimize?
         bool added_unit = false;
-        while (!possible_pure_queue.empty()) {
-            int p = possible_pure_queue.front();
-            possible_pure_queue.pop();
+        while (!possible_pure_queue_.empty()) {
+            int p = possible_pure_queue_.front();
+            possible_pure_queue_.pop();
             // пока проходило исполнение переменная могла перестать быть pure (была удалена из кнф полностью)
             if (is_pure(p)) {
                 added_unit = true;
@@ -250,7 +246,7 @@ namespace solver {
                     }
                     target_clause_iterator = std::find_if(next_iterator, clauses_.end(), contains_p);
                 }
-                AddUnitClauseFront(p);
+                    AddUnitClauseFront(p);
             }
         }
         return added_unit;

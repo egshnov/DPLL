@@ -1,6 +1,5 @@
 #include "DPLL.h"
 #include "CNF.h"
-#include <iostream>
 
 namespace solver {
 

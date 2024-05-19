@@ -52,7 +52,7 @@ namespace solver {
         std::vector<char> model_;
 
         //Очередь т.к. после инициализации в очереди лежат переменные которые точно pure
-        std::queue<int> possible_pure_queue;
+        std::queue<int> possible_pure_queue_;
         int variables_num_;
         int clauses_num_;
         bool contains_empty_ = false;
