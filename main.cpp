@@ -1,23 +1,16 @@
 #include <iostream>
-
+#include <benchmark/benchmark.h>
 #include "CNF.h"
 #include "DPLL.h"
 
-int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        std::cerr << "You have given " << argc - 1 << " arguments. You must pass ONE .cnf file that satisfies DIMACS."
-                  << std::endl;
-        return 1;
-    }
-
+void func_to_bench() {
     solver::CNF cnf;
 
     try {
-        cnf.Parse(argv[1]);
+        cnf.Parse("../test/test_input_data/satlib.cnf");
     }
     catch (const std::string &error_message) {
         std::cerr << error_message << std::endl;
-        return -1;
     }
 
     bool solved = solver::DPLL(cnf);
@@ -36,5 +29,13 @@ int main(int argc, char *argv[]) {
         }
         std::cout << "0" << std::endl;
     }
-    return 0;
 }
+
+static void BM_DPLL(benchmark::State &state) {
+    for (auto _: state) {
+        func_to_bench();
+    }
+}
+
+BENCHMARK(BM_DPLL)->Unit(benchmark::kMillisecond);
+BENCHMARK_MAIN();
